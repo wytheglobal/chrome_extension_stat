@@ -4,6 +4,8 @@ const fs = require('fs');
 const path = require('path');
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
+const IS_TEST = !!process.env.TEST
+
 async function scrapeChromeCommunicationExtensions() {
     const browser = await puppeteer.launch({
         // headless: false,
@@ -15,49 +17,51 @@ async function scrapeChromeCommunicationExtensions() {
     await page.goto(url, { waitUntil: 'networkidle0' });
 
     let hasMoreItems = true;
-    const extractedItems = [];
+    // const extractedItems = [];
+    // Wait for the items to load
+    await page.waitForSelector('[data-item-id]', { visible: true });
+    let pageNum = 0;
 
     while (hasMoreItems) {
-        // Wait for the items to load
-        await page.waitForSelector('[data-item-id]', { visible: true });
-
-        // Extract current items
-        const newItems = await page.evaluate(() => {
-            const items = document.querySelectorAll('[data-item-id]');
-
-
-            return Array.from(items).map(item => {
-                const titleElem = item.querySelector('[role="heading"]')
-                const parent = titleElem.parentElement
-                return ({
-                    title: titleElem.innerText,
-                    itemId: item.getAttribute('data-item-id'),
-                    // description: item.querySelector('div[class*="e3ZUqe"]')?.textContent.trim(),
-                    // rating: item.querySelector('div[aria-label*="Rated"]')?.getAttribute('aria-label'),
-                    // users: item.querySelector('div[class*="e3ZUqe"] + div')?.textContent.trim()
-                })
-            
-            });
-        });
-        console.log(newItems.length);
-
-        extractedItems.push(...newItems);
-
+        console.log(`page ${pageNum++} start`);
         // Scroll to bottom
         await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-        await sleep(2000);
+        await sleep(200);
         // await page.waitForTimeout(2000); // Wait for potential new content to load
 
         // Check if "Show more" button exists and click it
         const showMoreButton = await page.$('.mUIrbf-LgbsSe');
-        if (false && showMoreButton) {
-            await showMoreButton.click();
+        console.log(showMoreButton);
+        if (!IS_TEST && showMoreButton) {
+            // await showMoreButton.click();
+            await showMoreButton.evaluate(b => b.click());
             await sleep(2000);
             // await page.waitForTimeout(2000); // Wait for new items to load
         } else {
             hasMoreItems = false;
         }
     }
+
+    // Extract current items
+    const extractedItems = await page.evaluate(() => {
+        const items = document.querySelectorAll('[data-item-id]');
+
+
+        return Array.from(items).map(item => {
+            const titleElem = item.querySelector('[role="heading"]')
+            const parent = titleElem.parentElement
+            return ({
+                title: titleElem.innerText,
+                itemId: item.getAttribute('data-item-id'),
+                detailUrl: parent.previousSibling.getAttribute('href'),
+                // description: item.querySelector('div[class*="e3ZUqe"]')?.textContent.trim(),
+                // rating: item.querySelector('div[aria-label*="Rated"]')?.getAttribute('aria-label'),
+                // users: item.querySelector('div[class*="e3ZUqe"] + div')?.textContent.trim()
+            })
+        
+        });
+    });
+    console.log(extractedItems.length);
 
     await browser.close();
     return extractedItems;
@@ -123,17 +127,19 @@ function formatTime(date, format = 'HH-mm-zz') {
 }
 
 function saveItemsToFile(data, category, subCategory) {
-    // Create data directory if it doesn't exist
-    const dataDir = path.join(__dirname, 'data');
-    if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir);
-    }
-
     // Generate filename with category, subCategory, and formatted timestamp
     const now = new Date();
-    const formattedDate = now.toISOString().split('T')[0]; // YYYY-MM-DD
-    const formattedTime = formatTime(now, 'HH-mm-ss-zz'); // User can configure the format here
-    const filename = `${category}_${subCategory}_${formattedDate}_${formattedTime}.json`;
+    const formattedDate = formatTime(now, 'YYYY-MM-DD'); // YYYY-MM-DD
+
+    // Create data directory if it doesn't exist
+    const dataDir = path.join(process.cwd(), `data/extension_list/${formattedDate}`);
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, {recursive: true});
+    }
+
+
+    const formattedTime = formatTime(now, 'HH-mm-ss'); // User can configure the format here
+    const filename = `${category}_${subCategory}_${formattedTime}.json`;
     const filePath = path.join(dataDir, filename);
 
     // Write items to file
