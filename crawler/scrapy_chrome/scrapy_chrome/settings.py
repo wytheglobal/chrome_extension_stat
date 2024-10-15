@@ -53,6 +53,14 @@ ROBOTSTXT_OBEY = True
 #DOWNLOADER_MIDDLEWARES = {
 #    "scrapy_chrome.middlewares.ScrapyChromeDownloaderMiddleware": 543,
 #}
+DOWNLOADER_MIDDLEWARES = {
+#    "github_crawler.middlewares.GithubCrawlerDownloaderMiddleware": 543,
+   "scrapy_chrome.middlewares.ClashProxyMiddleware": 543,
+}
+
+CUSTOM_CLASH_PROXY_LIST = [
+    "http://127.0.0.1:7890",
+]
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html

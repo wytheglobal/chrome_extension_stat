@@ -4,6 +4,8 @@
 # https://docs.scrapy.org/en/latest/topics/spider-middleware.html
 
 from scrapy import signals
+import random
+
 
 # useful for handling different item types with a single interface
 from itemadapter import is_item, ItemAdapter
@@ -69,6 +71,63 @@ class ScrapyChromeDownloaderMiddleware:
         return s
 
     def process_request(self, request, spider):
+        # Called for each request that goes through the downloader
+        # middleware.
+
+        # Must either:
+        # - return None: continue processing this request
+        # - or return a Response object
+        # - or return a Request object
+        # - or raise IgnoreRequest: process_exception() methods of
+        #   installed downloader middleware will be called
+        return None
+
+    def process_response(self, request, response, spider):
+        # Called with the response returned from the downloader.
+
+        # Must either;
+        # - return a Response object
+        # - return a Request object
+        # - or raise IgnoreRequest
+        return response
+
+    def process_exception(self, request, exception, spider):
+        # Called when a download handler or a process_request()
+        # (from other downloader middleware) raises an exception.
+
+        # Must either:
+        # - return None: continue processing this exception
+        # - return a Response object: stops process_exception() chain
+        # - return a Request object: stops process_exception() chain
+        pass
+
+    def spider_opened(self, spider):
+        spider.logger.info("Spider opened: %s" % spider.name)
+
+
+
+# reference https://github.com/aivarsk/scrapy-proxies/blob/master/scrapy_proxies/randomproxy.py
+class ClashProxyMiddleware:
+    def __init__(self, settings):
+        # clash load balance api
+        # https://jiasupanda.com/clash-load-balance
+        self.proxy_list = settings.get('CUSTOM_CLASH_PROXY_LIST') 
+        # base_url = "http://127.0.0.1:60810"
+        # secret = "6ko-dJq-yhC-CKw"
+        # self.api = ClashAPI(base_url, secret)
+
+        # print(self.api.get_proxy_list())
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        # This method is used by Scrapy to create your spiders.
+        s = cls(crawler.settings)
+        crawler.signals.connect(s.spider_opened, signal=signals.spider_opened)
+        return s
+    
+    def process_request(self, request, spider):
+        ip = random.choice(self.proxy_list)
+        request.meta['proxy'] = ip
         # Called for each request that goes through the downloader
         # middleware.
 

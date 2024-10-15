@@ -15,3 +15,5 @@ build/
 
 
 data/*
+
+__pycache__
