@@ -18,3 +18,7 @@ build/
 data/*
 
 __pycache__
+
+
+crawler/extension_list/data/**/*
+crawler/scrapy_chrome/scrapy_chrome/config/var/**/*

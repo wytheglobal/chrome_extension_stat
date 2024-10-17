@@ -15,9 +15,11 @@ NEWSPIDER_MODULE = "scrapy_chrome.spiders"
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = "scrapy_chrome (+http://www.yourdomain.com)"
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = True
+ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 #CONCURRENT_REQUESTS = 32
@@ -62,6 +64,19 @@ CUSTOM_CLASH_PROXY_LIST = [
     "http://127.0.0.1:7890",
 ]
 
+################################################################################
+###  kafka
+################################################################################
+# Kafka settings
+KAFKA_BROKERS = ['localhost:9092']  # Replace with your Kafka broker(s)
+KAFKA_TOPIC = 'browser_extension_detail'  # Replace with your desired topic name
+
+# Configure item pipelines
+ITEM_PIPELINES = {
+    'scrapy_chrome.pipelines.kafka_pipeline.KafkaPipeline': 300,
+}
+
+
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
 #EXTENSIONS = {
@@ -76,14 +91,14 @@ CUSTOM_CLASH_PROXY_LIST = [
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-#AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-#AUTOTHROTTLE_START_DELAY = 5
+AUTOTHROTTLE_START_DELAY = 2
 # The maximum download delay to be set in case of high latencies
-#AUTOTHROTTLE_MAX_DELAY = 60
+AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-#AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+AUTOTHROTTLE_TARGET_CONCURRENCY = 60.0
 # Enable showing throttling stats for every response received:
 #AUTOTHROTTLE_DEBUG = False
 
