@@ -18,7 +18,7 @@ DB_HOST = 'aws-0-ap-northeast-1.pooler.supabase.com'
 DB_PORT = '5432'
 
 # Batch processing configuration
-BATCH_SIZE = 10
+BATCH_SIZE = 50
 FLUSH_INTERVAL = 10  # seconds
 
 def create_kafka_consumer():
@@ -62,35 +62,51 @@ def insert_extensions_batch(cursor, extensions_data):
             ext['name'],
             ext.get('desc_summary'),
             ext.get('description'),
-            'chrome',
+            0
         ) for ext in extensions_data
     ]
     extras.execute_values(cursor, query, extensions_values)
 
-def insert_user_counts_batch(cursor, user_counts_data):
+def insert_usage_stats_batch(cursor, usage_stats_data):
     query = sql.SQL("""
-        INSERT INTO user_counts (extension_item_id, user_count)
+        INSERT INTO usage_stats (extension_item_id, rate, user_count, rate_count)
         VALUES %s
     """)
-    user_counts_values = [
-        (item_id, user_count) for item_id, user_count in user_counts_data
+
+    # Block comment for the insert_usage_stats_batch function
+    """
+        ON CONFLICT (extension_item_id) DO UPDATE
+        SET rate = EXCLUDED.rate,
+            user_count = EXCLUDED.user_count,
+            rate_count = EXCLUDED.rate_count,
+            created_at = CURRENT_TIMESTAMP
+    """
+    
+    ###
+    usage_stats_values = [
+        (
+            stats['extension_id'],
+            stats['rate'],
+            stats['user_count'],
+            stats['rate_count']
+        ) for stats in usage_stats_data
     ]
-    extras.execute_values(cursor, query, user_counts_values)
+    extras.execute_values(cursor, query, usage_stats_values)
 
 def process_batch(messages, db_pool):
     extensions_data = []
-    user_counts_data = []
+    usage_stats_data = []
 
     for message in messages:
         extension_data = message.value
         extensions_data.append(extension_data)
-        user_counts_data.append((extension_data['extension_id'], extension_data['user_count']))
+        usage_stats_data.append(extension_data)
 
     conn = db_pool.getconn()
     try:
         with conn.cursor() as cursor:
             insert_extensions_batch(cursor, extensions_data)
-            insert_user_counts_batch(cursor, user_counts_data)
+            insert_usage_stats_batch(cursor, usage_stats_data)
         conn.commit()
     except Exception as e:
         conn.rollback()

@@ -1,0 +1,32 @@
+[
+    {
+        "extension_id": "bfgdeiadkckfbkeigkoncpdieiiefpig",
+        "url": "https://chromewebstore.google.com/detail/bitmoji/bfgdeiadkckfbkeigkoncpdieiiefpig",
+        "user_count": 4000000,
+        "name": "Bitmoji",
+        "desc_summary": "Use Bitmoji anywhere on web!",
+        "description": "- Directly insert Bitmojis into Gmail\n- Click and drag to resize them\n- Copy and paste them almost anywhere\n\nIf you don’t have a Bitmoji account, download the mobile app from bitmoji.com and create an avatar now!\n\nNeed help? Head to https://support.bitmoji.com/hc/en-us",
+        "rate": 3.7,
+        "rate_count": 2
+    },
+    {
+        "extension_id": "lifbcibllhkdhoafpjfnlhfpfgnpldfl",
+        "url": "https://chromewebstore.google.com/detail/skype/lifbcibllhkdhoafpjfnlhfpfgnpldfl",
+        "user_count": 3000000,
+        "name": "Skype",
+        "desc_summary": "Quickly create & join Skype meetings",
+        "description": "The latest update of the Skype extension gives you the ability to instantly create free video calls on Skype, with or without a Skype account. \n\nCreate a call\nWant to quickly create a Skype call and have your friends join you? Creating a call has never been easier and quicker! You can customise your meeting name and avatar and invite others by sharing the meeting link.\n\nJoin a call\nAlready have a link? Enter the meeting link and join the call instantly, directly in your browser.\n\nTo learn more, go to https://www.skype.com/en/free-conference-call/",
+        "rate": 3.5,
+        "rate_count": 6
+    },
+    {
+        "extension_id": "edcbdhndiniiafhoaoljbmhbmchadhmg",
+        "url": "https://chromewebstore.google.com/detail/linkedin-demetricator/edcbdhndiniiafhoaoljbmhbmchadhmg",
+        "user_count": null,
+        "name": "This item is not available",
+        "desc_summary": null,
+        "description": null,
+        "rate": null,
+        "rate_count": null
+    }
+]

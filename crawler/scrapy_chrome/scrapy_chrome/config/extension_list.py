@@ -32,3 +32,16 @@ def save_chrome_extension_list(urls):
     with open(output_file, 'w') as f:
         json.dump({'urls': urls}, f, indent=2)
     print(f"URLs saved to: {output_file}")
+
+def check_duplicate_urls(urls):
+    unique_urls = set(urls)
+    print(f"Total URLs: {len(urls)}")
+    print(f"Unique URLs: {len(unique_urls)}")
+    print(f"Duplicate URLs: {len(urls) - len(unique_urls)}")
+    if len(urls) != len(unique_urls):
+        print("Duplicates found!")
+        for url in unique_urls:
+            if urls.count(url) > 1:
+                print(f"Duplicate URL: {url}")
+    else:
+        print("No duplicates found.")
