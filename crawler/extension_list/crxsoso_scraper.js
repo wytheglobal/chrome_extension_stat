@@ -1,10 +1,10 @@
 const puppeteer = require('puppeteer');
-const categories = require('./config/category');
+const categories = require('./config/crxsoso');
 const fs = require('fs');
 const path = require('path');
 const sleep = ms => new Promise(res => setTimeout(res, ms));
 
-const IS_TEST = !!process.env.TEST
+const IS_TEST = !!process.env.IS_TEST
 
 
 class ItemPool {
@@ -76,18 +76,18 @@ async function scrapeChromeCommunicationExtensions(url) {
 
     while (hasMoreItems) {
         // Wait for the items to load
-        await page.waitForSelector('[data-item-id]', { visible: true });
+        await page.waitForSelector('.db', { visible: true });
         console.log(`page ${pageNum++} ${lastItemCount} start`);
 
 
         // parse items
         const parseInfo = await page.evaluate(({ lastItemCount, itemPool }) => {
-            const elements = document.querySelectorAll('[data-item-id]');
+            const elements = document.querySelectorAll('.db');
             const items = []
             for (let i = lastItemCount; i < elements.length; i++) {
                 const elem = elements[i];
-                const id = elem.getAttribute('data-item-id');
-                const href = elem.firstElementChild.getAttribute('href');
+                const id = elem.getAttribute('href').split('/').pop();
+                const href = `./detail/${id}`
                 // itemPool.add({
                 //     id: id,
                 //     href: href,
@@ -110,7 +110,11 @@ async function scrapeChromeCommunicationExtensions(url) {
         // check if items are already scraped
         lastItemCount = parseInfo.end
         const addedInfo = itemPool.batchAdd(parseInfo.items)
-        if (addedInfo.skipped === 32  ) {
+        if (
+            // 重复
+            addedInfo.skipped === 32  || 
+            // 没有新数据
+            (addedInfo.added === 0 && addedInfo.skipped === 0)) {
             noNewItemTime++;
         } else if (addedInfo.added > 0) {
             noNewItemTime = 0;
@@ -125,12 +129,14 @@ async function scrapeChromeCommunicationExtensions(url) {
         // await page.waitForTimeout(2000); // Wait for potential new content to load
 
         // Check if "Show more" button exists and click it
-        const showMoreButton = await page.$('.mUIrbf-LgbsSe');
+        const showMoreButton = true || await page.$('.mUIrbf-LgbsSe');
 
         if (!IS_TEST && showMoreButton && noNewItemTime < 5) {
             // await showMoreButton.click();
-            await showMoreButton.evaluate(b => b.click());
-            await sleep(2000);
+            // await showMoreButton.evaluate(b => b.click());
+            // Add a random delay between 0 and 5 seconds
+            const randomDelay = 1000 + Math.floor(Math.random() * 1000);
+            await sleep(randomDelay);
             // await page.waitForTimeout(2000); // Wait for new items to load
         } else {
             hasMoreItems = false;
@@ -146,28 +152,29 @@ async function scrapeChromeCommunicationExtensions(url) {
 
 async function doScrape() {
     const tasks = []
-    Object.keys(categories).forEach(category => {
-        categories[category].forEach(subCategory => {
-            tasks.push({
-                category: category,
-                subCategory: subCategory,
-                url: `https://chromewebstore.google.com/category/extensions/${category}/${subCategory}`
-            })
+    categories.forEach(category => {
+        tasks.push({
+            category: category,
+            url: `https://www.crxsoso.com/webstore/category/${category}`
         });
     });
 
-    // for (const task of tasks) {
-    //     console.log(`start scraping ${task.category} ${task.subCategory}`)
-    //     await scrapeCategory(task.category, task.subCategory);
-    // }
+    for (const task of tasks) {
+        console.log(`start scraping ${task.category}`)
+        await scrapeCategory(task.category);
+        
+        if (IS_TEST) {
+            break;
+        }
+    }
 
-    await scrapeCategory('productivity', 'tools')
+    // await scrapeCategory('productivity', 'tools')
 }
 
 doScrape();
 
-async function scrapeCategory(category, subCategory) {
-    const url = `https://chromewebstore.google.com/category/extensions/${category}/${subCategory}`
+async function scrapeCategory(category = 'test') {
+    const url = `https://www.crxsoso.com/webstore/category/${category}`
     console.log(`start scraping ${url}`)
     const startAt = formatTime(new Date(), 'YYYY-MM-DD HH:mm:ss');
 
@@ -176,11 +183,10 @@ async function scrapeCategory(category, subCategory) {
             // console.log(JSON.stringify(items, null, 2))
             saveItemsToFile({
                 category: category,
-                subCategory: subCategory,
                 items: items,
                 startAt: startAt,
                 endAt: formatTime(new Date(), 'YYYY-MM-DD HH:mm:ss'),
-            }, category, subCategory);
+            }, category);
         })
         .catch(error => console.error('Scraping failed:', error));
 }
@@ -204,8 +210,8 @@ function formatTime(date, format = 'HH-mm-zz') {
   return format
 }
 
-function saveItemsToFile(data, category, subCategory) {
-    // Generate filename with category, subCategory, and formatted timestamp
+function saveItemsToFile(data, category) {
+    // Generate filename with category, and formatted timestamp
     const now = new Date();
     const formattedDate = formatTime(now, 'YYYY-MM-DD'); // YYYY-MM-DD
 
@@ -216,7 +222,7 @@ function saveItemsToFile(data, category, subCategory) {
     }
 
     const formattedTime = formatTime(now, 'HH-mm-ss'); // User can configure the format here
-    const filename = category ? `${category}_${subCategory}_${formattedTime}.json` : `default.json`;
+    const filename = category ? `crxsoso_${category}_${formattedTime}.json` : `crxsoso_default.json`;
     const filePath = path.join(dataDir, filename);
 
     // Write items to file

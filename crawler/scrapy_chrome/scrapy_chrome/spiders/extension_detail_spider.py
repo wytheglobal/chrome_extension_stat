@@ -26,6 +26,7 @@ class ExtensionDetailSpider(scrapy.Spider):
             yield scrapy.Request(url=url, callback=self.parse)
 
     def parse(self, response):
+        print("start parsing: ", response.url)
         user_count_str = response.css('.F9iKBc::text').get()
         rate_count_str = response.css('.xJEoWe::text').get()
         rate_str = response.css('.Vq0ZA::text').get()
@@ -34,6 +35,7 @@ class ExtensionDetailSpider(scrapy.Spider):
         item = {
             'extension_id': response.url.split('/')[-1],
             'url': response.url,
+            'logo': extract_image_url(response.css('.rBxtY::attr(src)').get()),
             'user_count': extract_number_from_str(user_count_str, response.url),
             'name': response.css('h1::text').get().strip(),
             'desc_summary': response.css('.JJ3H1e p:nth-child(1)::text').get(),
@@ -42,6 +44,9 @@ class ExtensionDetailSpider(scrapy.Spider):
             'rate_count': extract_number_from_str(rate_count_str, response.url),
         }
         yield item
+
+def extract_image_url(link):
+    return link.split('=')[0]
 
 def extract_number_from_str(str, url):
     if str:

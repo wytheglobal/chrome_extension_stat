@@ -7,7 +7,7 @@ def formatTime(date, format_string):
     return date.strftime(format_string)
 
 def load_chrome_extension_list():
-    base_dir = os.path.join(os.path.dirname(__file__), '../../../extension_list/data/extension_list/2024-10-17')
+    base_dir = os.path.join(os.path.dirname(__file__), '../../../extension_list/data/extension_list/2024-10-29')
     urls = []
     
     for filename in os.listdir(base_dir):

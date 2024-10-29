@@ -2,7 +2,8 @@ import pytest
 from scrapy.http import HtmlResponse, Request
 from scrapy.utils.test import get_crawler
 from scrapy_chrome.spiders.extension_detail_spider import ExtensionDetailSpider
-from urllib.request import urlopen
+from urllib import request as urlrequest
+
 
 @pytest.fixture
 def spider():
@@ -12,14 +13,27 @@ def spider():
 def crawler():
     return get_crawler(ExtensionDetailSpider)
 
+
+def send_request(url):
+    proxy_handler = urlrequest.ProxyHandler({
+        'http': 'http://127.0.0.1:7890',
+        'https': 'http://127.0.0.1:7890',
+    })
+    opener = urlrequest.build_opener(proxy_handler)
+    return opener.open(url)
+
 def test_parse_method(spider):
+
+
+
     # Create a mock response with more realistic HTML content
     url = "https://chromewebstore.google.com/detail/meeting-assistant-chatgpt/kdkohcmkkplmkknlelglhfhjkegkiljd"
-    with urlopen(url) as response:
-        html_content = response.read()
 
-    request = Request(url=url)
-    response = HtmlResponse(url=url, request=request, body=html_content)
+    resp = send_request(url)
+    html_content = resp.read()
+
+
+    response = HtmlResponse(url=url, body=html_content)
 
     # Call the parse method
     parsed_data = next(spider.parse(response))
@@ -40,7 +54,7 @@ def test_parse_method(spider):
     assert parsed_data['desc_summary'] != ''
 
     assert parsed_data['description'] != ''
-
+    assert parsed_data['logo'] == 'https://lh3.googleusercontent.com/R_Kdyo_CGzUCzg74WpVDCKkF1E0lQCLaTT0q9LITFpCGHuU5FVqsDSD7rauyD3CjkbYtcZp3cMKoddhqY08AjRczqw'
 
     # Uncomment these tests when the spider is updated to extract more information
     # assert 'title' in item

@@ -18,10 +18,6 @@ CREATE TABLE extensions (
     )
 );
 
-ALTER TABLE usage_stats
-ALTER COLUMN rate DROP NOT NULL,
-ALTER COLUMN user_count DROP NOT NULL,
-ALTER COLUMN rate_count DROP NOT NULL;
 
 CREATE TABLE usage_stats (
     id SERIAL PRIMARY KEY,
@@ -32,9 +28,3 @@ CREATE TABLE usage_stats (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (extension_item_id) REFERENCES extensions(item_id)
 );
-
-
-ALTER TABLE usage_stats
-ALTER COLUMN rate DROP NOT NULL,
-ALTER COLUMN user_count DROP NOT NULL,
-ALTER COLUMN rate_count DROP NOT NULL;
