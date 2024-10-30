@@ -3,6 +3,7 @@ from scrapy.http import HtmlResponse, Request
 from scrapy.utils.test import get_crawler
 from scrapy_chrome.spiders.extension_detail_spider import ExtensionDetailSpider
 from urllib import request as urlrequest
+import json
 
 
 @pytest.fixture
@@ -22,6 +23,13 @@ def send_request(url):
     opener = urlrequest.build_opener(proxy_handler)
     return opener.open(url)
 
+def get_parsed_response(spider, url):
+    resp = send_request(url)
+    html_content = resp.read()
+    response = HtmlResponse(url=url, body=html_content)
+    return next(spider.parse(response))
+
+
 def test_parse_method(spider):
 
 
@@ -29,15 +37,15 @@ def test_parse_method(spider):
     # Create a mock response with more realistic HTML content
     url = "https://chromewebstore.google.com/detail/meeting-assistant-chatgpt/kdkohcmkkplmkknlelglhfhjkegkiljd"
 
-    resp = send_request(url)
-    html_content = resp.read()
+    # resp = send_request(url)
+    # html_content = resp.read()
 
 
-    response = HtmlResponse(url=url, body=html_content)
+    # response = HtmlResponse(url=url, body=html_content)
 
     # Call the parse method
-    parsed_data = next(spider.parse(response))
-    print(parsed_data)
+    parsed_data = get_parsed_response(spider, url)
+    print(json.dumps(parsed_data, indent=4))
 
     # Assert that we get one item
     # Assert that we get one item
@@ -55,13 +63,23 @@ def test_parse_method(spider):
 
     assert parsed_data['description'] != ''
     assert parsed_data['logo'] == 'https://lh3.googleusercontent.com/R_Kdyo_CGzUCzg74WpVDCKkF1E0lQCLaTT0q9LITFpCGHuU5FVqsDSD7rauyD3CjkbYtcZp3cMKoddhqY08AjRczqw'
+    assert parsed_data['category'] == 'communication'
 
-    # Uncomment these tests when the spider is updated to extract more information
-    # assert 'title' in item
-    # assert 'description' in item
-    # assert 'user_number' in item
-    # assert 'star_rating' in item
-    # assert 'images' in item
+
+
+def test_parse_method_2(spider):
+    url = "https://chromewebstore.google.com/detail/take-webpage-screenshots/mcbpblocgmgfnpjjppndjkmgjaogfceg"
+    parsed_data = get_parsed_response(spider, url)
+    assert isinstance(parsed_data['rate_count'], (int))    
+    assert parsed_data['category'] == 'tools'
+
+
+def test_item_not_available(spider):
+    url = "https://chromewebstore.google.com/detail/linkedin-demetricator/edcbdhndiniiafhoaoljbmhbmchadhmg"
+    parsed_data = get_parsed_response(spider, url)
+    # assert parsed_data['name'] == "This item is not available"
+    print(json.dumps(parsed_data, indent=4))
+
 
     # assert item['title'] == "Meeting Assistant - ChatGPT"
     # assert item['description'] == "AI-powered meeting assistant for better productivity"

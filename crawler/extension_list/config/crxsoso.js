@@ -13,6 +13,10 @@ const config = [
     // "lifestyle-social", 
     // "lifestyle-news", 
     // "lifestyle-art", 
-    "lifestyle-games", "lifestyle-entertainment", "lifestyle-fun", "make_chrome_yours-functionality", "make_chrome_yours-accessibility", "make_chrome_yours-privacy"]
+    // "lifestyle-games", 
+    // "lifestyle-entertainment", 
+    // "lifestyle-fun", 
+    // "make_chrome_yours-functionality", 
+    "make_chrome_yours-accessibility", "make_chrome_yours-privacy"]
 
 module.exports = config;

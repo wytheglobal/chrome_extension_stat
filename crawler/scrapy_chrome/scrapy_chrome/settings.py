@@ -73,7 +73,7 @@ KAFKA_TOPIC = 'browser_extension_detail'  # Replace with your desired topic name
 
 # Configure item pipelines
 ITEM_PIPELINES = {
-    # 'scrapy_chrome.pipelines.kafka_pipeline.KafkaPipeline': 300,
+    'scrapy_chrome.pipelines.kafka_pipeline.KafkaPipeline': 300,
 }
 
 

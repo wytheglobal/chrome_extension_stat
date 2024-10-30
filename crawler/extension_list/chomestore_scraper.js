@@ -161,7 +161,7 @@ async function doScrape() {
     //     await scrapeCategory(task.category, task.subCategory);
     // }
 
-    await scrapeCategory('productivity', 'tools')
+    await scrapeCategory('lifestyle', 'well_being')
 }
 
 doScrape();

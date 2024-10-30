@@ -3,21 +3,19 @@ CREATE TABLE extensions (
     item_id VARCHAR(32) UNIQUE NOT NULL,
     url TEXT NOT NULL,
     name VARCHAR(255) NOT NULL,
+    logo TEXT,
     desc_summary TEXT,
     description TEXT,
-    extension_type SMALLINT NOT NULL DEFAULT 0,
+    category VARCHAR(50),
+    version VARCHAR(20),
+    version_size VARCHAR(20),
+    version_updated TIMESTAMP WITH TIME ZONE,
+    item_type SMALLINT NOT NULL DEFAULT 0,
+    is_available BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT check_extension_type CHECK (extension_type IN (0, 1, 2)),
-    CONSTRAINT extension_type_description CHECK (
-        CASE
-            WHEN extension_type = 0 THEN 'Chrome Extension'
-            WHEN extension_type = 1 THEN 'Firefox Add-on'
-            WHEN extension_type = 2 THEN 'Safari Extension'
-        END IS NOT NULL
-    )
+    CONSTRAINT check_item_type CHECK (item_type IN (0, 1, 2))
 );
-
 
 CREATE TABLE usage_stats (
     id SERIAL PRIMARY KEY,
@@ -25,6 +23,10 @@ CREATE TABLE usage_stats (
     rate DECIMAL(2,1) CHECK (rate IS NULL OR (rate >= 0 AND rate <= 5)),
     user_count INTEGER,
     rate_count INTEGER,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    captured_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (extension_item_id) REFERENCES extensions(item_id)
 );
+
+CREATE INDEX idx_extensions_category ON extensions(category);
+CREATE INDEX idx_extensions_version_updated ON extensions(version_updated);
+CREATE INDEX idx_usage_stats_captured_at ON usage_stats(captured_at);
