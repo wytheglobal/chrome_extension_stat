@@ -45,52 +45,62 @@ def create_db_pool(min_conn=1, max_conn=10):
 
 def insert_extensions_batch(cursor, extensions_data):
     query = sql.SQL("""
-        INSERT INTO extensions (item_id, url, name, desc_summary, description, extension_type)
+        INSERT INTO extensions (
+            item_id, url, name, logo, desc_summary, description, 
+            category, version, version_size, version_updated, 
+            item_type, is_available
+        )
         VALUES %s
         ON CONFLICT (item_id) DO UPDATE
         SET url = EXCLUDED.url,
             name = EXCLUDED.name,
+            logo = EXCLUDED.logo,
             desc_summary = EXCLUDED.desc_summary,
             description = EXCLUDED.description,
-            extension_type = EXCLUDED.extension_type,
+            category = EXCLUDED.category,
+            version = EXCLUDED.version,
+            version_size = EXCLUDED.version_size,
+            version_updated = EXCLUDED.version_updated,
+            is_available = EXCLUDED.is_available,
             updated_at = CURRENT_TIMESTAMP
     """)
+    
     extensions_values = [
         (
-            ext['extension_id'],
+            ext['item_id'],
             ext['url'],
             ext['name'],
+            ext.get('logo'),
             ext.get('desc_summary'),
             ext.get('description'),
-            0
+            ext.get('category'),
+            ext.get('version'),
+            ext.get('version_size'),
+            ext.get('version_updated'),
+            0,  # item_type
+            True  # is_available
         ) for ext in extensions_data
     ]
     extras.execute_values(cursor, query, extensions_values)
 
 def insert_usage_stats_batch(cursor, usage_stats_data):
     query = sql.SQL("""
-        INSERT INTO usage_stats (extension_item_id, rate, user_count, rate_count)
+        INSERT INTO usage_stats (
+            item_id, rate, user_count, rate_count
+        )
         VALUES %s
     """)
-
-    # Block comment for the insert_usage_stats_batch function
-    """
-        ON CONFLICT (extension_item_id) DO UPDATE
-        SET rate = EXCLUDED.rate,
-            user_count = EXCLUDED.user_count,
-            rate_count = EXCLUDED.rate_count,
-            created_at = CURRENT_TIMESTAMP
-    """
     
-    ###
     usage_stats_values = [
         (
-            stats['extension_id'],
-            stats['rate'],
-            stats['user_count'],
-            stats['rate_count']
-        ) for stats in usage_stats_data
+            stats['item_id'],
+            stats.get('rate'),
+            stats.get('user_count'),
+            stats.get('rate_count')
+        ) for stats in usage_stats_data if any(stats.get(field) is not None 
+            for field in ['rate', 'user_count', 'rate_count'])
     ]
+    
     extras.execute_values(cursor, query, usage_stats_values)
 
 def process_batch(messages, db_pool):

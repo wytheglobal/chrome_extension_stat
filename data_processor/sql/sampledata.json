@@ -28,5 +28,20 @@
         "version": null,
         "version_size": null,
         "version_updated": null
+    },
+    {
+        "item_id": "gdjmnodaeipepkjeginembcopiobhigg",
+        "url": "https://chromewebstore.google.com/detail/datagator-%E2%80%93-claim-back-yo/gdjmnodaeipepkjeginembcopiobhigg",
+        "logo": "https://lh3.googleusercontent.com/oBpDAHmihFYmbJSI0Ua6A5k-769MFVldi_uk5c7okwAcRQwRAG5_PRYN337yR6qGL7Zp_jsodmVrgGDsksA4W4Fl",
+        "user_count": 226,
+        "name": "Datagator – claim back your privacy",
+        "desc_summary": "Join claims against trackers and websites that don’t respect your privacy. Complements your ad blocker.",
+        "description": "Identify sites and trackers that violate your privacy, and join claims for compensation for past breaches and to prevent future ones. \n\nWhenever Datagator wins a claim you joined, we share up to 60% of any proceeds we received with you. \n\n✓ Clean up the internet by taking action against privacy violators to help create a more private future.\n✓ All browsing data is stored and analysed on your computer. Datagator can only access data that you choose to share if you join a claim. \n✓ Complements ad blockers such as uBlock Origin, Adblock Plus, Adguard and Ghostery.",
+        "rate": 5.0,
+        "rate_count": 4,
+        "category": "privacy",
+        "version": "0.2.1",
+        "version_size": "771KiB",
+        "version_updated": "2024-07-04T00:00:00"
     }
 ]

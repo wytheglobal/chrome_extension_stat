@@ -19,12 +19,12 @@ CREATE TABLE extensions (
 
 CREATE TABLE usage_stats (
     id SERIAL PRIMARY KEY,
-    extension_item_id VARCHAR(32) NOT NULL,
+    item_id VARCHAR(32) NOT NULL,
     rate DECIMAL(2,1) CHECK (rate IS NULL OR (rate >= 0 AND rate <= 5)),
     user_count INTEGER,
     rate_count INTEGER,
     captured_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (extension_item_id) REFERENCES extensions(item_id)
+    FOREIGN KEY (item_id) REFERENCES extensions(item_id)
 );
 
 CREATE INDEX idx_extensions_category ON extensions(category);

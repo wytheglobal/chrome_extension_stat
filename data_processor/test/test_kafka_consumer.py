@@ -66,13 +66,38 @@ def test_insert_extensions_batch(db_cursor, db_connection, extensions_data):
     count = db_cursor.fetchone()[0]
     assert count == prev_count + need_insert_count
 
+    # Verify all records were inserted correctly by checking each item in mock data
+    for item in extensions_data:
+        db_cursor.execute("""
+            SELECT item_id, url, logo, name, desc_summary, description, 
+                   category, version, version_size, version_updated
+            FROM extensions 
+            WHERE item_id = %s
+        """, (item['item_id'],))
+        result = db_cursor.fetchone()
+        
+        assert result is not None
+        assert result[0] == item['item_id']  # item_id
+        assert result[1] == item['url']  # url
+        assert result[2] == item.get('logo')  # logo may be null
+        assert result[3] == item['name']  # name
+        assert result[4] == item.get('desc_summary')  # desc_summary may be null
+        assert result[5] == item.get('description')  # description may be null
+        assert result[6] == item.get('category')  # category may be null
+        assert result[7] == item.get('version')  # version may be null
+        assert result[8] == item.get('version_size')  # version_size may be null
+        # version_updated requires timestamp comparison which we'll skip for now
 
-    db_cursor.execute("SELECT item_id, name FROM extensions WHERE item_id IN ('bfgdeiadkckfbkeigkoncpdieiiefpig', 'lifbcibllhkdhoafpjfnlhfpfgnpldfl', 'edcbdhndiniiafhoaoljbmhbmchadhmg')")
-    results = db_cursor.fetchall()
-    assert len(results) == 3
-    assert ('bfgdeiadkckfbkeigkoncpdieiiefpig', 'Bitmoji') in results
-    assert ('lifbcibllhkdhoafpjfnlhfpfgnpldfl', 'Skype') in results
-    assert ('edcbdhndiniiafhoaoljbmhbmchadhmg', 'This item is not available') in results
+
+
+
+
+    # db_cursor.execute("SELECT item_id, name FROM extensions WHERE item_id IN ('bfgdeiadkckfbkeigkoncpdieiiefpig', 'lifbcibllhkdhoafpjfnlhfpfgnpldfl', 'edcbdhndiniiafhoaoljbmhbmchadhmg')")
+    # results = db_cursor.fetchall()
+    # assert len(results) == 3
+    # assert ('bfgdeiadkckfbkeigkoncpdieiiefpig', 'Bitmoji') in results
+    # assert ('lifbcibllhkdhoafpjfnlhfpfgnpldfl', 'Skype') in results
+    # assert ('edcbdhndiniiafhoaoljbmhbmchadhmg', 'This item is not available') in results
 # def test_insert_usage_stats_batch(db_cursor, db_connection, extensions_data):
     
     db_cursor.execute("SELECT COUNT(*) FROM usage_stats")
