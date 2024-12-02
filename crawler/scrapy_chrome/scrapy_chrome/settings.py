@@ -69,7 +69,7 @@ CUSTOM_CLASH_PROXY_LIST = [
 ################################################################################
 # Kafka settings
 KAFKA_BROKERS = ['localhost:9092']  # Replace with your Kafka broker(s)
-KAFKA_TOPIC = 'browser_extension_detail'  # Replace with your desired topic name
+KAFKA_TOPIC = 'browser_extension_raw_data'  # Replace with your desired topic name
 
 # Configure item pipelines
 ITEM_PIPELINES = {

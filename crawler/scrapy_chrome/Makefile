@@ -4,6 +4,9 @@ gen_urls:
 load_urls:
 	python scrapy_chrome/config/extension_list.py load
 
+find_new:
+	python scrapy_chrome/config/extension_list.py find_new
+
 crawl:
 	# Generate extension URLs if config/var directory doesn't exist or is empty
 	if [ ! -d "scrapy_chrome/config/var" ] || [ -z "$(ls -A scrapy_chrome/config/var/*.json 2>/dev/null)" ]; then \
@@ -16,4 +19,5 @@ test:
 	pytest -s
 
 shell:
-	https_proxy=http://127.0.0.1:7890 scrapy shell "https://chromewebstore.google.com/detail/meeting-assistant-chatgpt/kdkohcmkkplmkknlelglhfhjkegkiljd"
+	# https_proxy=http://127.0.0.1:7890 scrapy shell "https://chromewebstore.google.com/detail/meeting-assistant-chatgpt/kdkohcmkkplmkknlelglhfhjkegkiljd"
+	https_proxy=http://127.0.0.1:7890 scrapy shell "https://chromewebstore.google.com/detail/aombkfndjiikdmgkbhfnjmlokgopdlak"

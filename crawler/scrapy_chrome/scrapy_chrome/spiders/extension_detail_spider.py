@@ -46,7 +46,7 @@ class ExtensionDetailSpider(scrapy.Spider):
             logging.warning(f"Failed to parse version_updated date: {version_updated_str} for {response.url}")
 
         item = {
-            'item_id': extension_id,
+            'extension_id': extension_id,
             'url': response.url,
             'logo': extract_image_url(response.css('.rBxtY::attr(src)').get()),
             'user_count': extract_number_from_str(user_count_str, response.url),

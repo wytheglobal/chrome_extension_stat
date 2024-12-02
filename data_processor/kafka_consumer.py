@@ -8,7 +8,8 @@ from psycopg2.pool import SimpleConnectionPool
 
 # Kafka configuration
 KAFKA_BOOTSTRAP_SERVERS = ['localhost:9092']  # Replace with your Kafka broker(s)
-KAFKA_TOPIC = 'browser_extension_detail'  # Replace with your topic name
+KAFKA_TOPIC = 'browser_extension_raw_data'  # Replace with your topic name
+KAFKA_CONSUMER_GROUP = 'extension_processor_v2'
 
 # PostgreSQL configuration
 DB_NAME = 'postgres'
@@ -27,7 +28,7 @@ def create_kafka_consumer():
         bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
         auto_offset_reset='earliest',
         enable_auto_commit=True,
-        group_id='extension_processor',
+        group_id=KAFKA_CONSUMER_GROUP,
         value_deserializer=lambda x: json.loads(x.decode('utf-8')),
         max_poll_records=BATCH_SIZE
     )
@@ -45,13 +46,13 @@ def create_db_pool(min_conn=1, max_conn=10):
 
 def insert_extensions_batch(cursor, extensions_data):
     query = sql.SQL("""
-        INSERT INTO extensions (
-            item_id, url, name, logo, desc_summary, description, 
-            category, version, version_size, version_updated, 
-            item_type, is_available
+        INSERT INTO extension (
+            extension_id, url, name, logo, desc_summary, description, 
+            category, version, version_size, version_updated_at, 
+            extension_type, is_available
         )
         VALUES %s
-        ON CONFLICT (item_id) DO UPDATE
+        ON CONFLICT (extension_id) DO UPDATE
         SET url = EXCLUDED.url,
             name = EXCLUDED.name,
             logo = EXCLUDED.logo,
@@ -60,14 +61,14 @@ def insert_extensions_batch(cursor, extensions_data):
             category = EXCLUDED.category,
             version = EXCLUDED.version,
             version_size = EXCLUDED.version_size,
-            version_updated = EXCLUDED.version_updated,
+            version_updated_at = EXCLUDED.version_updated_at,
             is_available = EXCLUDED.is_available,
             updated_at = CURRENT_TIMESTAMP
     """)
     
     extensions_values = [
         (
-            ext['item_id'],
+            ext['extension_id'],
             ext['url'],
             ext['name'],
             ext.get('logo'),
@@ -78,22 +79,22 @@ def insert_extensions_batch(cursor, extensions_data):
             ext.get('version_size'),
             ext.get('version_updated'),
             0,  # item_type
-            True  # is_available
+            2 if ext['name'] == 'This item is not available' else 1, # is_available
         ) for ext in extensions_data
     ]
     extras.execute_values(cursor, query, extensions_values)
 
 def insert_usage_stats_batch(cursor, usage_stats_data):
     query = sql.SQL("""
-        INSERT INTO usage_stats (
-            item_id, rate, user_count, rate_count
+        INSERT INTO usage_stat (
+            extension_id, rate, user_count, rate_count
         )
         VALUES %s
     """)
     
     usage_stats_values = [
         (
-            stats['item_id'],
+            stats['extension_id'],
             stats.get('rate'),
             stats.get('user_count'),
             stats.get('rate_count')
@@ -101,7 +102,8 @@ def insert_usage_stats_batch(cursor, usage_stats_data):
             for field in ['rate', 'user_count', 'rate_count'])
     ]
     
-    extras.execute_values(cursor, query, usage_stats_values)
+    if usage_stats_values:
+        extras.execute_values(cursor, query, usage_stats_values)
 
 def process_batch(messages, db_pool):
     extensions_data = []

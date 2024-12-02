@@ -4,7 +4,7 @@ import os
 from psycopg2 import sql, extras
 from kafka_consumer import insert_extensions_batch, insert_usage_stats_batch
 from dotenv import load_dotenv
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT, ISOLATION_LEVEL_READ_COMMITTED
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT, ISOLATION_LEVEL_READ_COMMITTED, ISOLATION_LEVEL_READ_UNCOMMITTED
 import psycopg2
 from decimal import Decimal
 
@@ -30,7 +30,7 @@ def db_connection():
     # This sets the isolation level to AUTOCOMMIT
     # In AUTOCOMMIT mode, each SQL statement is treated as a separate transaction
     # that is automatically committed after it is executed
-    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    # conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     yield conn
     conn.close()
 
@@ -40,7 +40,7 @@ def db_cursor(db_connection):
     # Reset the isolation level to READ COMMITTED
     # This ensures that the transaction only sees data committed before the transaction began,
     # preventing dirty reads but allowing non-repeatable reads and phantom reads
-    conn.set_isolation_level(ISOLATION_LEVEL_READ_COMMITTED)
+    conn.set_isolation_level(ISOLATION_LEVEL_READ_UNCOMMITTED)
     cursor = conn.cursor()
     try:
         cursor.execute("BEGIN")
@@ -54,7 +54,7 @@ def extensions_data():
     return mock_data
 
 def test_insert_extensions_batch(db_cursor, db_connection, extensions_data):
-    db_cursor.execute("SELECT COUNT(*) FROM extensions")
+    db_cursor.execute("SELECT COUNT(*) FROM extension")
     prev_count = db_cursor.fetchone()[0]
 
     insert_extensions_batch(db_cursor, extensions_data)
@@ -62,22 +62,22 @@ def test_insert_extensions_batch(db_cursor, db_connection, extensions_data):
     # db_connection.commit()
 
     # Verify the data was inserted correctly
-    count = db_cursor.execute("SELECT COUNT(*) FROM extensions")
+    count = db_cursor.execute("SELECT COUNT(*) FROM extension")
     count = db_cursor.fetchone()[0]
     assert count == prev_count + need_insert_count
 
     # Verify all records were inserted correctly by checking each item in mock data
     for item in extensions_data:
         db_cursor.execute("""
-            SELECT item_id, url, logo, name, desc_summary, description, 
-                   category, version, version_size, version_updated
-            FROM extensions 
-            WHERE item_id = %s
-        """, (item['item_id'],))
+            SELECT extension_id, url, logo, name, desc_summary, description, 
+                   category, version, version_size, version_updated_at, is_available
+            FROM extension
+            WHERE extension_id = %s
+        """, (item['extension_id'],))
         result = db_cursor.fetchone()
         
         assert result is not None
-        assert result[0] == item['item_id']  # item_id
+        assert result[0] == item['extension_id']  # extension_id
         assert result[1] == item['url']  # url
         assert result[2] == item.get('logo')  # logo may be null
         assert result[3] == item['name']  # name
@@ -87,12 +87,12 @@ def test_insert_extensions_batch(db_cursor, db_connection, extensions_data):
         assert result[7] == item.get('version')  # version may be null
         assert result[8] == item.get('version_size')  # version_size may be null
         # version_updated requires timestamp comparison which we'll skip for now
+        assert result[10] == 2 if item['name'] is 'This item is not available' else 1  # is_available may be null
 
 
 
 
-
-    # db_cursor.execute("SELECT item_id, name FROM extensions WHERE item_id IN ('bfgdeiadkckfbkeigkoncpdieiiefpig', 'lifbcibllhkdhoafpjfnlhfpfgnpldfl', 'edcbdhndiniiafhoaoljbmhbmchadhmg')")
+    # db_cursor.execute("SELECT extension_id, name FROM extensions WHERE extension_id IN ('bfgdeiadkckfbkeigkoncpdieiiefpig', 'lifbcibllhkdhoafpjfnlhfpfgnpldfl', 'edcbdhndiniiafhoaoljbmhbmchadhmg')")
     # results = db_cursor.fetchall()
     # assert len(results) == 3
     # assert ('bfgdeiadkckfbkeigkoncpdieiiefpig', 'Bitmoji') in results
@@ -100,21 +100,56 @@ def test_insert_extensions_batch(db_cursor, db_connection, extensions_data):
     # assert ('edcbdhndiniiafhoaoljbmhbmchadhmg', 'This item is not available') in results
 # def test_insert_usage_stats_batch(db_cursor, db_connection, extensions_data):
     
-    db_cursor.execute("SELECT COUNT(*) FROM usage_stats")
+    db_cursor.execute("SELECT COUNT(*) FROM usage_stat")
     prev_count = db_cursor.fetchone()[0]
 
     insert_usage_stats_batch(db_cursor, extensions_data)
     # db_connection.commit()
 
     # Verify the data was inserted correctly
-    db_cursor.execute("SELECT COUNT(*) FROM usage_stats")
+    db_cursor.execute("SELECT COUNT(*) FROM usage_stat")
     count = db_cursor.fetchone()[0]
-    assert count == prev_count + need_insert_count
+    print("================ count", count)
+    # has one item is not available, so - 1
+    assert count == prev_count + (need_insert_count - 1)
 
-    
-    db_cursor.execute("SELECT extension_item_id, rate, user_count FROM usage_stats WHERE extension_item_id IN ('bfgdeiadkckfbkeigkoncpdieiiefpig', 'lifbcibllhkdhoafpjfnlhfpfgnpldfl', 'edcbdhndiniiafhoaoljbmhbmchadhmg')")
-    results = db_cursor.fetchall()
-    print(results)
-    assert ('bfgdeiadkckfbkeigkoncpdieiiefpig', Decimal('3.7'), 4000000) in results
-    assert ('lifbcibllhkdhoafpjfnlhfpfgnpldfl', Decimal('3.5'), 3000000) in results
-    assert ('edcbdhndiniiafhoaoljbmhbmchadhmg', None, None) in results
+    for item in extensions_data:
+        # Skip checking usage stats for unavailable items
+        if item['name'] != 'This item is not available':
+            db_cursor.execute("""
+                SELECT extension_id, rate, user_count, rate_count
+                FROM usage_stat
+                WHERE extension_id = %s
+                ORDER BY captured_at DESC
+                LIMIT 1
+            """, (item['extension_id'],))
+            rows = db_cursor.fetchall()
+            print("================")
+            print(rows)
+            result = rows[0]
+            assert result is not None
+            assert result[0] == item['extension_id']  # extension_id
+            assert float(result[1]) == item.get('rate') if item.get('rate') else result[1] is None  # rate may be null
+            assert result[2] == item.get('user_count')  # user_count may be null
+            assert result[3] == item.get('rate_count')  # rate_count may be null
+
+    # test multiple insert
+    insert_usage_stats_batch(db_cursor, extensions_data)
+    for item in extensions_data:
+        if item['name'] != 'This item is not available':
+            db_cursor.execute("""
+                SELECT extension_id, rate, user_count, rate_count
+                FROM usage_stat
+                WHERE extension_id = %s
+                ORDER BY captured_at DESC
+                LIMIT 1
+            """, (item['extension_id'],))
+            rows = db_cursor.fetchall()
+            print("================", item['extension_id'])
+            print(rows)
+            result = rows[0]
+            assert result is not None
+            assert result[0] == item['extension_id']  # extension_id
+            assert float(result[1]) == item.get('rate') if item.get('rate') else result[1] is None  # rate may be null
+            assert result[2] == item.get('user_count')  # user_count may be null
+            assert result[3] == item.get('rate_count')  # rate_count may be null
